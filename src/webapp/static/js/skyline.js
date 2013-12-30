@@ -17,7 +17,8 @@ var handle_data = function(data) {
     for (i in data) {
         metric = data[i];
         name = metric[1]
-        var src = GRAPHITE_HOST + '/render/?width=1400&from=-1hour&target=' + name;
+	console.log(name);
+        var src = GRAPHITE_HOST + '/render/?width=1300&from=-1hour&target=' + name.replace(/\//g, '.') + '&lineMode=connected&noCache=1';
         // Add a space after the metric name to make each unique
         to_append = "<div class='sub'><a target='_blank' href='" + src + "'><div class='name'>" + name + " </div></a>&nbsp;&nbsp;"
         if (OCULUS_HOST != ''){

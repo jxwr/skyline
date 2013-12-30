@@ -48,7 +48,7 @@ class Worker(Process):
     def send_graphite_metric(self, name, value):
         if settings.GRAPHITE_HOST != '':
             sock = socket.socket()
-            sock.connect((settings.GRAPHITE_HOST.replace('http://', ''), settings.CARBON_PORT))
+            sock.connect((settings.CARBON_HOST.replace('http://', ''), settings.CARBON_PORT))
             sock.sendall('%s %s %i\n' % (name, value, time()))
             sock.close()
             return True
@@ -75,7 +75,6 @@ class Worker(Process):
                 self.redis_conn.ping()
             except:
                 logger.error('worker can\'t connect to redis at socket path %s' % settings.REDIS_SOCKET_PATH)
-                sleep(10)
                 self.redis_conn = StrictRedis(unix_socket_path = settings.REDIS_SOCKET_PATH)
                 pipe = self.redis_conn.pipeline()
                 continue
@@ -97,6 +96,10 @@ class Worker(Process):
 
                     # Append to messagepack main namespace
                     key = ''.join((FULL_NAMESPACE, metric[0]))
+
+                    # !!! replace / with dot for our graphite, BY JIAOXIANG
+                    key.replace('/', '.')
+                    
                     pipe.append(key, packb(metric[1]))
                     pipe.sadd(full_uniques, key)
 
