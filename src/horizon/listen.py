@@ -93,6 +93,7 @@ class Listen(Process):
                             if len(xs) != 3:
                                 continue
                             metric = (xs[0], (int(xs[2]), float(xs[1])))
+                            # logger.info(str(metric))
                             chunk.append(metric)
 
                             # Queue the chunk and empty the variable

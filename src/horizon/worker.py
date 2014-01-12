@@ -26,6 +26,12 @@ class Worker(Process):
         self.canary = canary
         self.skip_mini = skip_mini
 
+        try:
+            self.graphite_sock = socket.socket()
+            self.graphite_sock.connect((settings.CARBON_HOST.replace('http://', ''), settings.CARBON_PORT))
+        except:
+            self.graphite_sock = None
+
     def check_if_parent_is_alive(self):
         """
         Self explanatory.
@@ -45,12 +51,22 @@ class Worker(Process):
 
         return False
 
+    def connnect_graphite(self):
+        try:
+            self.graphite_sock = socket.socket()
+            self.graphite_sock.connect((settings.CARBON_HOST.replace('http://', ''), settings.CARBON_PORT))
+        except:
+            self.graphite_sock = None
+            logger.info('connect to graphite failed')
+
     def send_graphite_metric(self, name, value):
         if settings.GRAPHITE_HOST != '':
-            sock = socket.socket()
-            sock.connect((settings.CARBON_HOST.replace('http://', ''), settings.CARBON_PORT))
-            sock.sendall('%s %s %i\n' % (name, value, time()))
-            sock.close()
+            try:
+                self.graphite_sock.sendall('%s %s %i\n' % (name, value, time()))
+            except:
+                self.connect_graphite()
+                if self.graphite_sock is not None:
+                    self.graphite_sock.sendall('%s %s %i\n' % (name, value, time()))
             return True
 
         return False
@@ -113,7 +129,7 @@ class Worker(Process):
 
                 # Log progress
                 if self.canary:
-                    logger.info('queue size at %d' % self.q.qsize())
+                     # logger.info('queue size at %d' % self.q.qsize())
                     self.send_graphite_metric('skyline.horizon.queue_size', self.q.qsize())
 
             except Empty:

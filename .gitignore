@@ -1,6 +1,7 @@
 *.pyc
 *.swp
 *.log
+var/*
 settings.py~
 dump.rdb
 nohup.out
