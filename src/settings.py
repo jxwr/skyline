@@ -175,6 +175,7 @@ HORIZON_IP = '0.0.0.0'
 
 # This is the port that listens for Graphite pickles over TCP, sent by Graphite's
 # carbon-relay agent.
+TEXTLINE_PORT = 8023
 PICKLE_PORT = 8024
 
 # This is the port that listens for Messagepack-encoded UDP packets.

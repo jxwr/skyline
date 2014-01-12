@@ -45,6 +45,7 @@ class Horizon():
 
         # Start the listeners
         Listen(settings.PICKLE_PORT, listen_queue, pid, type="pickle").start()
+        Listen(settings.TEXTLINE_PORT, listen_queue, pid, type="textline").start()
         Listen(settings.UDP_PORT, listen_queue, pid, type="udp").start()
 
         # Start the roomba

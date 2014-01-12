@@ -61,6 +61,60 @@ class Listen(Process):
         except:
             exit(0)
 
+    def listen_textline(self):
+        """
+        Listen for textline over tcp
+        """
+        while 1:
+            try:
+                # Set up the TCP listening socket
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                s.bind((self.ip, self.port))
+                s.setblocking(1)
+                s.listen(5)
+                logger.info('listening over tcp for textline on %s' % self.port)
+
+                (conn, address) = s.accept()
+                logger.info('connection from %s:%s' % (address[0], self.port))
+
+                chunk = []
+                body = ''
+                while 1:
+                    self.check_if_parent_is_alive()
+                    try:
+                        body += self.read_all(conn, 1024)
+                        lines = body.split('\n')
+                        body = lines[-1]
+
+                        # Iterate and chunk each individual datapoint
+                        for line in lines[:-1]:
+                            xs = line.split(' ')
+                            if len(xs) != 3:
+                                continue
+                            metric = (xs[0], (int(xs[2]), float(xs[1])))
+                            chunk.append(metric)
+
+                            # Queue the chunk and empty the variable
+                            if len(chunk) > settings.CHUNK_SIZE:
+                                try:
+                                    self.q.put(list(chunk), block=False)
+                                    chunk[:] = []
+
+                                # Drop chunk if queue is full
+                                except Full:
+                                    logger.info('queue is full, dropping datapoints')
+                                    chunk[:] = []
+
+                    except Exception as e:
+                        logger.info(e)
+                        logger.info('incoming connection dropped, attempting to reconnect')
+                        break
+
+            except Exception as e:
+                logger.info('can\'t connect to socket: ' + str(e))
+                break
+
     def listen_pickle(self):
         """
         Listen for pickles over tcp
@@ -126,7 +180,7 @@ class Listen(Process):
                     data, addr = s.recvfrom(1024)
                     metric = unpackb(data)
                     chunk.append(metric)
-
+                    
                     # Queue the chunk and empty the variable
                     if len(chunk) > settings.CHUNK_SIZE:
                         try:
@@ -150,6 +204,8 @@ class Listen(Process):
 
         if self.type == 'pickle':
             self.listen_pickle()
+        elif self.type == 'textline':
+            self.listen_textline()
         elif self.type == 'udp':
             self.listen_udp()
         else:
