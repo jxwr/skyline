@@ -1,3 +1,8 @@
+## changes
+
+1. add graphite textline listener
+2. make horizon worker use long connection to graphite
+
 ## Skyline
 
 [![Build Status](https://travis-ci.org/etsy/skyline.png)](https://travis-ci.org/etsy/skyline)
